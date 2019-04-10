@@ -1,5 +1,5 @@
 class songModel:
-    def __init__(self, title, album, year, url, release_date, image, artist):
+    def __init__(self, title, album, year, url, release_date, image, artist, genre):
         self.title = title
         self.album = album
         self.year = year
@@ -7,3 +7,4 @@ class songModel:
         self.release_date = release_date
         self.image = image
         self.artist = artist
+        self.genre = genre

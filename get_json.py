@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 from pyDes import *
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from songModel import songModel
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -60,24 +61,23 @@ def make_json(self, json_data):
     des_cipher = self.setDecipher()
     lst = []
     for song in json_data['songs']:
-        song_dict = {}
         try:
             enc_url = base64.b64decode(song['encrypted_media_url'].strip())
             dec_url = des_cipher.decrypt(enc_url, padmode=PAD_PKCS5).decode('utf-8')
             dec_url = dec_url.replace('_96.mp4', '_320.mp4')
         except Exception as e:
-            dec_url = ''
+            dec_url = None
             logger.error('Download Error' + str(e))
 
-        song_dict['title'] = song['song']
-        song_dict['album'] = song['album']
-        song_dict['year'] = song['year']
-        song_dict['url'] = dec_url
-        song_dict['release_date'] = song['release_date']
-        song_dict['image'] = song['image']
-        song_dict['artist'] = song['primary_artists']
-        song_dict['genre'] = ', '.join([hashtags['title'].replace('#','') for hashtags in song['hashtags'] if hashtags['type'] == 'channel'])
-
-        lst.append(song_dict)
+        title = song['song']
+        album = song['album']
+        year = song['year']
+        url = dec_url
+        release_date = song['release_date']
+        image = song['image']
+        artist = song['primary_artists']
+        genre = ', '.join([hashtags['title'].replace('#','') for hashtags in song['hashtags'] if hashtags['type'] == 'channel'])
+        song = songModel( title, album, year, url, release_date, image, artist, genre)
+        lst.append(song)
 
     return lst
