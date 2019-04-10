@@ -2,13 +2,13 @@ import ast
 import base64
 import json
 import re
-import logger
 
+import logger
 import requests
 from bs4 import BeautifulSoup
+from pyDes import *
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-from pyDes import *
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
@@ -46,6 +46,7 @@ def getAlbum(self, album_url):
     getAlbumID = soup.select(".play")[0]["onclick"]
     albumId = ast.literal_eval(re.search("\[(.*?)\]", getAlbumID).group())[1]
     songs_json = []
+    print('https://www.saavn.com/api.php?_format=json&__call=content.getAlbumDetails&albumid={0}'.format(albumId))
     respone = requests.get(
         'https://www.saavn.com/api.php?_format=json&__call=content.getAlbumDetails&albumid={0}'.format(albumId),
         verify=False)
@@ -54,27 +55,29 @@ def getAlbum(self, album_url):
         songs_json = json.loads(songs_json)
     return self.make_json(songs_json)
 
+
 def make_json(self, json_data):
-        des_cipher = self.setDecipher()
-        lst = []
-        for song in json_data['songs']:
-            song_dict = {}
-            try:
-                enc_url = base64.b64decode(song['encrypted_media_url'].strip())
-                dec_url = des_cipher.decrypt(enc_url, padmode=PAD_PKCS5).decode('utf-8')
-                dec_url = dec_url.replace('_96.mp4', '_320.mp4')
-            except Exception as e:
-                dec_url = ''
-                logger.error('Download Error' + str(e))
+    des_cipher = self.setDecipher()
+    lst = []
+    for song in json_data['songs']:
+        song_dict = {}
+        try:
+            enc_url = base64.b64decode(song['encrypted_media_url'].strip())
+            dec_url = des_cipher.decrypt(enc_url, padmode=PAD_PKCS5).decode('utf-8')
+            dec_url = dec_url.replace('_96.mp4', '_320.mp4')
+        except Exception as e:
+            dec_url = ''
+            logger.error('Download Error' + str(e))
 
-            song_dict['title'] = song['song']
-            song_dict['album'] = song['album']
-            song_dict['year'] = song['year']
-            song_dict['url'] = dec_url
-            song_dict['release_date'] = song['release_date']
-            song_dict['image'] = song['image']
-            song_dict['artist'] = song['primary_artists']
+        song_dict['title'] = song['song']
+        song_dict['album'] = song['album']
+        song_dict['year'] = song['year']
+        song_dict['url'] = dec_url
+        song_dict['release_date'] = song['release_date']
+        song_dict['image'] = song['image']
+        song_dict['artist'] = song['primary_artists']
+        song_dict['genre'] = ', '.join([hashtags['title'].replace('#','') for hashtags in song['hashtags'] if hashtags['type'] == 'channel'])
 
-            lst.append(song_dict)
+        lst.append(song_dict)
 
-        return lst
+    return lst
