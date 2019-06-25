@@ -3,21 +3,29 @@ import os
 import eyed3
 import requests
 from pydub import AudioSegment
-
+from mutagen.mp3 import MP3
+from mutagen.id3 import ID3, APIC, TIT2, TPE1, TRCK, TALB, USLT, error
 
 def set_attributes(self, song):
-    audiofile = eyed3.load(song)
-    audiofile.tag.artist = "Nobunny"
-    audiofile.tag.album = "Love Visions"
-    audiofile.tag.title = "I Am a Girlfriend"
-    audiofile.tag.track_num = 4
-    with open('35163665790_d182d84f5e_k.jpg', 'rb') as f:
-        image = f.read()
-    audiofile.tag.images.set(3, image, "image/jpeg", u"Description")
-    audiofile.tag.images.set(2, image, "image/jpeg", u"Description")
-    audiofile.tag.images.set(1, image, "image/jpeg", u"Description")
-    audiofile.tag.images.set(0, image, "image/jpeg", u"Description")
-    audiofile.tag.save()
+    pic_file = '35163665790_d182d84f5e_k.jpg' # pic file
+    audio = MP3(song, ID3=ID3)
+    try:
+        audio.add_tags()
+    except Exception as e:
+        print(e)
+    # audio.tags.add(APIC(
+    #     encoding=3,
+    #     mime='image/jpeg',
+    #     type=3,
+    #     desc=u'Cover Picture',
+    #     data=open(pic_file,'rb').read()
+    # ))
+    audio.tags.add(TIT2(encoding=3, text='title'))
+    audio.tags.add(TALB(encoding=3, text='testalbum'))
+    audio.tags.add(TPE1(encoding=3, text='testartist'))
+    audio.tags.add(TRCK(encoding=3, text='5'))
+    # audio.tags.add(USLT(encoding=3, lang=u'eng', desc=u'desc', text=item['lyric'].decode('utf-8')))
+    audio.save()
 
 
 def convert_to_mp3(self, filename):
@@ -38,4 +46,4 @@ def download(self, url, filename):
     return filename
 
 
-set_attributes('self', '1 - Hamari Adhuri kahani - Hamari Adhuri kahani -  Songspk.CC .mp3')
+set_attributes('self','tete.mp3')

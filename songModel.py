@@ -8,3 +8,14 @@ class songModel:
         self.image = image
         self.artist = artist
         self.genre = genre
+
+    def __str__(self):
+        return self.title
+
+
+
+    def download(self):pass
+#         todo
+# 1. Download the song
+# 2. Update metadata of song
+# 3. save

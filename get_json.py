@@ -7,17 +7,14 @@ import logger
 import requests
 from bs4 import BeautifulSoup
 from pyDes import *
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from songModel import songModel
 
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+# requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 def get_soup(self, url):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0'
-    }
-    res = requests.get(url, headers=headers)
+    res = requests.get(url)
     if res.status_code == 200:
         soup = BeautifulSoup(res.text, 'lxml')
         return soup
@@ -47,7 +44,6 @@ def getAlbum(self, album_url):
     getAlbumID = soup.select(".play")[0]["onclick"]
     albumId = ast.literal_eval(re.search("\[(.*?)\]", getAlbumID).group())[1]
     songs_json = []
-    print('https://www.saavn.com/api.php?_format=json&__call=content.getAlbumDetails&albumid={0}'.format(albumId))
     respone = requests.get(
         'https://www.saavn.com/api.php?_format=json&__call=content.getAlbumDetails&albumid={0}'.format(albumId),
         verify=False)
@@ -57,7 +53,24 @@ def getAlbum(self, album_url):
     return self.make_json(songs_json)
 
 
-def make_json(self, json_data):
+def get_song(self, song_url):
+    soup = self.get_soup(song_url)
+    j = soup.find('div', {'class': "hide song-json"})
+    data = json.loads(j.text)
+    url = data['url']
+    data = {'songs': [{
+        'song': data.get('title'),
+        'album': data.get('album'),
+        'year': data.get('year'),
+        'release_date': None,
+        'image': data.get('image_url'),
+        'primary_artists': data.get('singers'),
+        'encrypted_media_url': url,
+    }]}
+    return make_song(self, data)
+
+
+def make_song(self, json_data):
     des_cipher = self.setDecipher()
     lst = []
     for song in json_data['songs']:
@@ -76,8 +89,12 @@ def make_json(self, json_data):
         release_date = song['release_date']
         image = song['image']
         artist = song['primary_artists']
-        genre = ', '.join([hashtags['title'].replace('#','') for hashtags in song['hashtags'] if hashtags['type'] == 'channel'])
-        song = songModel( title, album, year, url, release_date, image, artist, genre)
+        try:
+            genre = ', '.join(
+                [hashtags['title'].replace('#', '') for hashtags in song['hashtags'] if hashtags['type'] == 'channel'])
+        except:
+            genre = None
+        song = songModel(title, album, year, url, release_date, image, artist, genre)
         lst.append(song)
 
     return lst
